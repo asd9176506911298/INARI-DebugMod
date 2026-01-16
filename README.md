@@ -18,7 +18,5 @@
 | **RShift** | Speedup by 2x while holding |
 
 ---
-
-![](https://github.com/asd9176506911298/INARI-DebugMod/blob/master/Source/img/Preview1.png)
-
-![](https://github.com/asd9176506911298/INARI-DebugMod/blob/master/Source/img/Preview2.png)
+![](Source/img/Preview1.png)
+![](Source/img/Preview2.png)
