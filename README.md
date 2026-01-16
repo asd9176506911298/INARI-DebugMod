@@ -1,5 +1,11 @@
 # Inari-DebugMod
 
+# Install BepinEx
+- https://github.com/BepInEx/BepInEx/releases/tag/v5.4.23.4
+- BepInEx_win_x64_5.4.23.4.zip
+
+# Key
+
 | Key | Desc |
 | :--- | :--- |
 | **F1** | Show DebugInfo |
