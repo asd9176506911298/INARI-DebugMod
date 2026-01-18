@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Localization.Settings;
 using UnityEngine.Playables;
 using UnityEngine.UIElements;
@@ -381,6 +382,31 @@ namespace DebugMod
             //DebugMod.Logger.LogInfo($"[DebugMod] 已跳過 {__instance.name} 的相機過場，計時開始。");
 
             return false; // 返回 false 表示不執行原版代碼，從而跳過相機協程
+        }
+
+        [HarmonyPatch(typeof(InGameDebugTool), "ToggleDebugUI")]
+        [HarmonyPostfix]
+        private static void PatchInGameDebugTool(InGameDebugTool __instance)
+        {
+            // 1. 檢查 rootElement 狀態 (有了 Publicizer 直接讀取)
+            // 如果目前是隱藏狀態，才需要檢查是否被誤關了 InputMap
+            if (__instance.rootElement.style.visibility == Visibility.Hidden)
+            {
+                var playMode = Singleton<GameManager>.Instance.PlayMode;
+
+                // 2. 判斷是否處於任何需要 UI 的模式
+                // 只要不是 GameMode (正常遊玩)，通常就需要 UI InputMap
+                if (playMode == PlayMode.PauseMode || playMode == PlayMode.MenuMode)
+                {
+                    InputActionMap uiMap = Singleton<GameManager>.Instance.InputManager.InputActionAsset.FindActionMap("UI");
+
+                    if (uiMap != null && !uiMap.enabled)
+                    {
+                        uiMap.Enable();
+                        //DebugMod.Logger.LogInfo($"[ModFix] Detected {playMode}, re-enabling UI InputMap.");
+                    }
+                }
+            }
         }
     }
 }

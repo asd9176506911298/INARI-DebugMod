@@ -45,6 +45,10 @@
       <HintPath>..\..\..\Games\INARI\Inari_Data\Managed\netstandard.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.InputSystem">
+      <HintPath>..\..\..\Games\INARI\Inari_Data\Managed\Unity.InputSystem.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.Localization">
       <HintPath>..\..\..\Games\INARI\Inari_Data\Managed\Unity.Localization.dll</HintPath>
       <Private>False</Private>
