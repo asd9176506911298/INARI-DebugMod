@@ -102,7 +102,7 @@ namespace DebugMod
                     _sb.AppendLine($"GameState: {gm.PlayMode}");
                     _sb.AppendLine($"Dead Count: {outData.PlayerDeadCount}");
 
-                    _sb.AppendLine("<color=white>--- Respawn Data ---</color>");
+                    _sb.AppendLine("<color=orange>--- Respawn Data ---</color>");
 
                     // 1. 存檔點名稱：增加醒目的標籤
                     string triggerName = string.IsNullOrEmpty(outData.SaveTriggerName) ? "None" : outData.SaveTriggerName;
@@ -133,6 +133,26 @@ namespace DebugMod
                            .AppendLine("</color>");
                     }
 
+                    _sb.AppendLine("<color=yellow>--- Last Enemy Hit ---</color>");
+                    _sb.AppendLine(_lastEnemyHitInfo);
+                    _sb.AppendLine("<color=cyan>--- Debug Mod States ---</color>");
+                    string green = "<color=#00FF00>";
+                    string end = "</color>";
+
+                    _sb.AppendLine($"{DebugMod.DebugInfoKey.Value} DebugInfoMenu");
+
+                    // 只有開啟的功能會套用綠色，關閉的維持原色
+                    _sb.AppendLine($"{DebugMod.NoCostStaminaKey.Value} NoCostStamina: {(DebugMod.IsNoCostStaminaEnabled.Value ? $"{green}ON{end}" : "OFF")}");
+                    _sb.AppendLine($"{DebugMod.NoDecreaseHpKey.Value} NoDecreaseHp: {(DebugMod.IsNoDecreaseHpEnabled.Value ? $"{green}ON{end}" : "OFF")}");
+                    _sb.AppendLine($"{DebugMod.TeleportToSavePosKey.Value} TeleportToSavePos (Shift+{DebugMod.TeleportToSavePosKey.Value}: Save)");
+                    _sb.AppendLine($"{DebugMod.OHKKey.Value} OHK: {(DebugMod.IsOHKEnabeld.Value ? $"{green}ON{end}" : "OFF")}");
+                    _sb.AppendLine($"{DebugMod.ToggleSkipKey.Value} IsSkipCutScene: {(DebugMod.IsSkip.Value ? $"{green}ON{end}" : "OFF")}");
+                    _sb.AppendLine($"{DebugMod.SaveStateKey.Value} SaveState");
+                    _sb.AppendLine($"{DebugMod.LoadStateKey.Value} LoadState");
+                    _sb.AppendLine($"{DebugMod.FreeCamKey.Value} FreeCam: {(FreeCamController.IsEnabled ? $"{green}ON{end}" : "OFF")}");
+                    _sb.AppendLine($"{DebugMod.ColliderViewKey.Value} ColliderView (Ctrl: Config)");
+                    _sb.AppendLine($"{DebugMod.TelelportToSpawnPointKey.Value} TelelportToSpawnPoint");
+
                     // --- 遊戲速度監控 ---
                     float currentTS = Time.timeScale;
                     float baseTS = DebugMod.forcedTS;
@@ -144,9 +164,6 @@ namespace DebugMod
                     if (Mathf.Abs(currentTS - baseTS) > 0.01f)
                         _sb.Append(" (Base: ").Append(baseTS.ToString("F2")).Append("x)");
                     _sb.AppendLine();
-
-                    _sb.AppendLine("<color=yellow>--- Last Enemy Hit ---</color>");
-                    _sb.AppendLine(_lastEnemyHitInfo);
                 }
                 else
                 {

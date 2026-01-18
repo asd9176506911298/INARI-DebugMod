@@ -89,7 +89,7 @@ namespace DebugMod
         private void Update()
         {
             // 偵測按下 F11 的瞬間
-            if (Input.GetKeyDown(KeyCode.F11))
+            if (Input.GetKeyDown(DebugMod.ColliderViewKey.Value))
             {
                 // 如果同時按住 Control
                 if (Input.GetKey(KeyCode.LeftControl))
