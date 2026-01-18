@@ -80,23 +80,32 @@ public class DebugMod : BaseUnityPlugin
         if (Input.GetKeyDown(DebugMod.NoDecreaseHpKey.Value))
             IsNoDecreaseHpEnabled.Value = !IsNoDecreaseHpEnabled.Value;
 
-        string currentScene = GameManager.instance.DataManager.OutGameData.CurrentSceneName;
         var teleportKey = DebugMod.TeleportToSavePosKey.Value;
 
         // 1. 判定 Shift + Key (存檔)
         if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(teleportKey))
         {
-            Vector3 pos = GameManager.instance.playerStateMachine.transform.position;
-            sceneSavedPositions[currentScene] = pos; // 根據當前場景存入字典
-            DebugMod.Logger.LogInfo($"[SavePos] Scene: {currentScene}, Pos: {pos}");
+            // 按下按鍵時才檢查資料是否存在 (防止報錯)
+            if (GameManager.instance?.DataManager?.OutGameData != null)
+            {
+                string currentScene = GameManager.instance.DataManager.OutGameData.CurrentSceneName;
+                Vector3 pos = GameManager.instance.playerStateMachine.transform.position;
+                sceneSavedPositions[currentScene] = pos;
+                DebugMod.Logger.LogInfo($"[SavePos] Scene: {currentScene}, Pos: {pos}");
+            }
         }
-        // 2. 判定單鍵 (傳送)，確保該場景有存過東西
+        // 2. 判定單鍵 (傳送)
         else if (Input.GetKeyDown(teleportKey))
         {
-            if (sceneSavedPositions.TryGetValue(currentScene, out Vector3 targetPos))
+            // 按下按鍵時才檢查資料是否存在 (防止報錯)
+            if (GameManager.instance?.DataManager?.OutGameData != null)
             {
-                GameManager.instance.playerStateMachine.transform.position = targetPos;
-                DebugMod.Logger.LogInfo($"[Teleport] To {currentScene} Saved Pos: {targetPos}");
+                string currentScene = GameManager.instance.DataManager.OutGameData.CurrentSceneName;
+                if (sceneSavedPositions.TryGetValue(currentScene, out Vector3 targetPos))
+                {
+                    GameManager.instance.playerStateMachine.transform.position = targetPos;
+                    DebugMod.Logger.LogInfo($"[Teleport] To {currentScene} Saved Pos: {targetPos}");
+                }
             }
         }
 
