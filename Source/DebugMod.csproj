@@ -33,6 +33,10 @@
       <HintPath>..\..\..\Games\INARI\Inari_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>..\..\..\Games\INARI\Inari_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Cinemachine">
       <HintPath>..\..\..\Games\INARI\Inari_Data\Managed\Cinemachine.dll</HintPath>
       <Private>False</Private>
