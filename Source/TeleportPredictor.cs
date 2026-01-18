@@ -5,48 +5,109 @@ using System.Linq;
 
 namespace DebugMod
 {
-    // 1. 監聽 Boss 的閃現動作
-    [HarmonyPatch(typeof(BossBlackboard), "OnTeleport")]
-    public class BossTeleportHook
+    public class CounterMod
     {
-        // 關鍵修正：將參數名稱從 position 改為 targetPosition 以匹配原版方法
-        static void Postfix(BossBlackboard __instance, Vector3 targetPosition)
+        public static bool IsProcessingTeleport = false;
+        // 在這裡設定 BOSS 的速度倍率 (1.0 是原速，2.5 是極快)
+        public static float BossSpeedMultiplier = 10f;
+    }
+
+    // --- 新增：BOSS 動作加速補丁 ---
+    [HarmonyPatch(typeof(BossBlackboard), "LateUpdate")]
+    public class BossSpeedPatch
+    {
+        static void Prefix(BossBlackboard __instance)
         {
-            // 當 Boss 執行 OnTeleport 時
-            var player = Object.FindObjectOfType<PlayerStateMachine>();
-            if (player != null)
+            if (__instance == null || __instance.IsDead) return;
+
+            // 強制設定位移與動畫速度
+            __instance.MovementSpeed = CounterMod.BossSpeedMultiplier;
+
+            // 如果有 Animator，同步縮放動畫播放速度
+            if (__instance.Animator != null)
             {
-                // 計算指向 Boss 剛傳送到的新位置 (targetPosition)
-                // 這裡稍微加一點高度補償 (+0.5f)，確保射向中心
-                Vector3 targetCenter = targetPosition + new Vector3(0, 0.5f, 0);
-                Vector3 dir = targetCenter - player.transform.position;
-                float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-
-                // 角色立刻回敬一發飛鏢
-                player.CreateShuriken(angle);
-
-                DebugMod.Logger.LogInfo($"[Counter] Boss Teleported to {targetPosition}. Auto-Counter Fired!");
+                __instance.Animator.speed = CounterMod.BossSpeedMultiplier;
             }
         }
     }
 
-    // 2. 自動瞄準補丁 (維持不變)
+    // --- 1. 監聽 Boss 的傳送動作並反擊 ---
+    [HarmonyPatch(typeof(BossBlackboard), "OnTeleport")]
+    public class BossTeleportHook
+    {
+        static void Postfix(BossBlackboard __instance, Vector3 targetPosition)
+        {
+            var gameManager = Singleton<GameManager>.Instance;
+            var player = gameManager?.playerStateMachine;
+            if (player == null) return;
+
+            Vector3 targetCenter = targetPosition + new Vector3(0, 0.5f, 0);
+            Vector3 dir = targetCenter - player.GetColliderCenter();
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+            player.CreateShuriken(angle);
+        }
+    }
+
+    // --- 2. 當 Boss 受傷時，自動觸發飛鏢瞬移 ---
+    [HarmonyPatch(typeof(BossBlackboard), "OnDamaged")]
+    public class BossDamagedHook
+    {
+        static void Postfix(BossBlackboard __instance, DamageInfo damageInfo)
+        {
+            if (CounterMod.IsProcessingTeleport) return;
+
+            var gameManager = Singleton<GameManager>.Instance;
+            var player = gameManager?.playerStateMachine;
+            if (player == null) return;
+
+            // 核心變動：一受傷就強制噴出一發飛鏢
+            // 這樣可以確保連擊不會中斷
+            Vector3 diff = (Vector3)__instance.Collision2D.GetCenter() - (Vector3)player.GetColliderCenter();
+            float angle = Mathf.Atan2(diff.y, diff.x) * Mathf.Rad2Deg;
+            player.CreateShuriken(angle);
+
+            if (player.ThrowingShurikens == null || player.ThrowingShurikens.Count == 0) return;
+
+            var lastShuriken = player.ThrowingShurikens.LastOrDefault();
+            // 只要飛鏢射出去了（不管有沒有 Hit），我們就嘗試瞬移
+            if (lastShuriken == null) return;
+
+            try
+            {
+                CounterMod.IsProcessingTeleport = true;
+
+                // 忽略體力限制，強制執行瞬移以跟上加速後的 BOSS
+                player.PlayerRunTimeData.AddStamina(100f);
+                player.ShurikenTeleport();
+            }
+            catch (System.Exception e)
+            {
+                Debug.Log($"[Teleport Error] {e.Message}");
+            }
+            finally
+            {
+                CounterMod.IsProcessingTeleport = false;
+            }
+        }
+    }
+
+    // --- 3. 自動瞄準補丁 ---
     [HarmonyPatch(typeof(PlayerStateMachine), "CreateShuriken")]
     public class ShurikenAutoAimPatch
     {
         static void Prefix(PlayerStateMachine __instance, ref float angle)
         {
-            var bb = Object.FindObjectOfType<BossBlackboard>();
-            if (bb == null) return;
+            var boss = Object.FindObjectOfType<BossBlackboard>();
+            if (boss == null) return;
 
-            // 鎖定 Boss 中心點
-            Vector3 targetPos = bb.transform.position + new Vector3(0, 0.5f, 0);
-            Vector3 dir = targetPos - __instance.transform.position;
+            Vector3 targetPos = boss.transform.position + new Vector3(0, 0.5f, 0);
+            Vector2 dir = (targetPos - __instance.GetColliderCenter());
 
-            angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            if (dir.magnitude < 50f) // 擴大搜尋範圍以配合加速後的 BOSS
+            {
+                angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            }
         }
     }
-
-    // 解決編譯錯誤的預測器類別
-    public class TeleportPredictor : MonoBehaviour { }
 }
