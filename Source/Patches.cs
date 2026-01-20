@@ -254,7 +254,7 @@ namespace DebugMod
         [HarmonyPrefix]
         private static bool PatchActivateStep(TutorialHub __instance)
         {
-            //if (!DebugMod.IsSkip.Value) return true;
+            if (!DebugMod.IsSkip.Value) return true;
 
             if (__instance.steps == null || __instance.steps.Count == 0) return true;
 
