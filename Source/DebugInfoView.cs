@@ -64,7 +64,17 @@ namespace DebugMod
             if (gm != null && gm.DataManager != null && gm.DataManager.OutGameData != null)
             {
                 var outData = gm.DataManager.OutGameData;
-                _sb.Append("Scene: ").AppendLine(outData.CurrentSceneName);
+
+                if (gm.CurrentGameSequenceManager != null &&
+                gm.CurrentGameSequenceManager.currentSceneRoot != null)
+                {
+                    string sceneName = gm.CurrentGameSequenceManager.currentSceneRoot.SceneName;
+                    _sb.Append("Scene: ").AppendLine(!string.IsNullOrEmpty(sceneName) ? sceneName : "Unknown Scene");
+                }
+                else
+                {
+                    _sb.AppendLine("Scene: [Manager or Root is Null]");
+                }
 
                 // 3. 檢查玩家相關實體是否存在
                 if (_player != null && gm.playerStateMachine != null)
