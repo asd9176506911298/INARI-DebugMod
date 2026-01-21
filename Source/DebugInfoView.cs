@@ -81,6 +81,7 @@ namespace DebugMod
                 {
                     var psm = gm.playerStateMachine;
                     var runTime = psm.PlayerRunTimeData;
+                    var inputCtrl = psm.inputController;
 
                     // 取得開關狀態
                     bool infiniteStamina = DebugMod.IsNoCostStaminaEnabled?.Value ?? false;
@@ -109,12 +110,14 @@ namespace DebugMod
 
                     // 狀態與重生點
                     _sb.AppendLine($"PlayerState: <color=yellow>{psm.CurrentStateType}</color>");
+                    bool isInputable = inputCtrl != null ? inputCtrl.isInputable : false;
+                    _sb.AppendLine($"IsInputable: {(isInputable ? "<color=#00FF00>True</color>" : "<color=#FF0000>False</color>")}");
                     _sb.AppendLine($"GameState: {gm.PlayMode}");
                     _sb.AppendLine($"Dead Count: {outData.PlayerDeadCount}");
 
                     _sb.AppendLine("<color=orange>--- Respawn Data ---</color>");
 
-                    // 1. 存檔點名稱：增加醒目的標籤
+                    // 1. 存檔點名稱：增加醒目的標籤 
                     string triggerName = string.IsNullOrEmpty(outData.SaveTriggerName) ? "None" : outData.SaveTriggerName;
                     _sb.Append("SaveNode: ").Append("<color=yellow>").Append(triggerName).AppendLine("</color>");
 
