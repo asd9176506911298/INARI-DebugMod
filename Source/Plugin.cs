@@ -31,6 +31,7 @@ public class DebugMod : BaseUnityPlugin
     public static ConfigEntry<bool> IsNoDecreaseHpEnabled;
     public static ConfigEntry<bool> IsOHKEnabeld;
     public static ConfigEntry<bool> IsSkip;
+    public static ConfigEntry<bool> IsLoadStateResetScene;
 
     private FreeCamController _freeCam;
     private ColliderView _colliderView;
@@ -52,6 +53,7 @@ public class DebugMod : BaseUnityPlugin
         IsNoDecreaseHpEnabled = Config.Bind<bool>("", "NoDecreaseHp", false, "");
         IsOHKEnabeld = Config.Bind<bool>("", "OneHitKill", false, "");
         IsSkip = Config.Bind<bool>("", "IsSkip", true, "");
+        IsLoadStateResetScene = Config.Bind<bool>("", "IsLoadStateResetScene", false, "");
         DebugInfoKey = Config.Bind<KeyCode>("", "DebugInfoKey", KeyCode.F1, "");
         NoCostStaminaKey = Config.Bind<KeyCode>("", "NoCostStaminaKey", KeyCode.F2, "");
         NoDecreaseHpKey = Config.Bind<KeyCode>("", "NoDecreaseHpKey", KeyCode.F3, "");
@@ -83,7 +85,7 @@ public class DebugMod : BaseUnityPlugin
         var teleportKey = DebugMod.TeleportToSavePosKey.Value;
 
         // 1. 判定 Shift + Key (存檔)
-        if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(teleportKey))
+        if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(teleportKey))
         {
             // 按下按鍵時才檢查資料是否存在 (防止報錯)
             if (GameManager.instance?.DataManager?.OutGameData != null)
@@ -192,29 +194,38 @@ public class DebugMod : BaseUnityPlugin
 
         if (Input.GetKeyDown(LoadStateKey.Value))
         {
-            string saveFilePath = GetSavePath();
-            if (!ES3.FileExists(saveFilePath)) return;
+            if (Input.GetKey(KeyCode.LeftControl))
+            {
+                IsLoadStateResetScene.Value = !IsLoadStateResetScene.Value;
+            }
+            else
+            {
+                string saveFilePath = GetSavePath();
+                if (!ES3.FileExists(saveFilePath)) return;
 
-            var gm = Singleton<GameManager>.Instance;
-            var loadedData = ES3.Load("InGameData", saveFilePath, new Dictionary<string, object>());
-            gm.DataManager.currentInGameSaveData = loadedData;
+                var gm = Singleton<GameManager>.Instance;
+                var loadedData = ES3.Load("InGameData", saveFilePath, new Dictionary<string, object>());
+                gm.DataManager.currentInGameSaveData = loadedData;
 
-            // 提取數據 (使用模式匹配簡化轉換)
-            float targetS = 90f;
-            int targetH = 3;
-            Vector3 savedPos = Vector3.zero;
+                // 提取數據 (使用模式匹配簡化轉換)
+                float targetS = 90f;
+                int targetH = 3;
+                Vector3 savedPos = Vector3.zero;
 
-            if (loadedData.TryGetValue("ManualSavedStamina", out var s)) targetS = System.Convert.ToSingle(s);
-            if (loadedData.TryGetValue("ManualSavedHP", out var h)) targetH = System.Convert.ToInt32(h);
-            if (loadedData.TryGetValue("PlayerPos", out object p) && p is Vector3 v) savedPos = v;
+                if (loadedData.TryGetValue("ManualSavedStamina", out var s)) targetS = System.Convert.ToSingle(s);
+                if (loadedData.TryGetValue("ManualSavedHP", out var h)) targetH = System.Convert.ToInt32(h);
+                if (loadedData.TryGetValue("PlayerPos", out object p) && p is Vector3 v) savedPos = v;
 
-            // 獲取當前場景
-            SceneRoot targetScene = gm.CurrentGameSequenceManager.CurrentSceneRoot;
+                // 獲取當前場景
+                SceneRoot targetScene = gm.CurrentGameSequenceManager.CurrentSceneRoot;
 
-            // 安全啟動：先停止所有相關協程防止衝突
-            StopAllCoroutines();
-            StartCoroutine(LoadAndRestoreRoutine(targetScene, savedPos, targetH, targetS));
+                // 安全啟動：先停止所有相關協程防止衝突
+                StopAllCoroutines();
+                StartCoroutine(LoadAndRestoreRoutine(targetScene, savedPos, targetH, targetS));
+            }
         }
+
+
     }
 
     private string GetSavePath()
@@ -230,21 +241,24 @@ public class DebugMod : BaseUnityPlugin
         var stm = gm.SceneTranslationManager;
 
         // --- 第一階段：場景重載 ---
-        stm.IsLoadingScene = true;
-        gm.DataManager.ClearPersistenceData();
-        yield return stm.UnloadAllScene();
+        if (IsLoadStateResetScene.Value)
+        {
+            stm.IsLoadingScene = true;
+            gm.DataManager.ClearPersistenceData();
+            yield return stm.UnloadAllScene();
 
-        stm.CurrentSceneRoot = null;
-        Ref<GameSequenceManager> newRootWrapper = new Ref<GameSequenceManager>();
-        yield return stm.LoadScene(scene.SceneName, newRootWrapper);
+            stm.CurrentSceneRoot = null;
+            Ref<GameSequenceManager> newRootWrapper = new Ref<GameSequenceManager>();
+            yield return stm.LoadScene(scene.SceneName, newRootWrapper);
 
-        // 更新引用
-        stm.CurrentSceneRoot = newRootWrapper.Value.CurrentSceneRoot;
-        gm.CurrentGameSequenceManager = newRootWrapper.Value;
-        stm.AddSceneRoot(newRootWrapper.Value);
-        yield return stm.PerLoadNearScene(stm.CurrentSceneRoot);
+            // 更新引用
+            stm.CurrentSceneRoot = newRootWrapper.Value.CurrentSceneRoot;
+            gm.CurrentGameSequenceManager = newRootWrapper.Value;
+            stm.AddSceneRoot(newRootWrapper.Value);
+            yield return stm.PerLoadNearScene(stm.CurrentSceneRoot);
 
-        gm.ResetGameSetting();
+            gm.ResetGameSetting();
+        }
 
         // --- 第二階段：玩家初始化 ---
         while (gm.PlayerStateMachine == null) yield return null;

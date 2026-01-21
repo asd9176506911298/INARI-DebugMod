@@ -157,13 +157,13 @@ namespace DebugMod
                     // 只有開啟的功能會套用綠色，關閉的維持原色
                     _sb.AppendLine($"{DebugMod.NoCostStaminaKey.Value} NoCostStamina: {(DebugMod.IsNoCostStaminaEnabled.Value ? $"{green}ON{end}" : "OFF")}");
                     _sb.AppendLine($"{DebugMod.NoDecreaseHpKey.Value} NoDecreaseHp: {(DebugMod.IsNoDecreaseHpEnabled.Value ? $"{green}ON{end}" : "OFF")}");
-                    _sb.AppendLine($"{DebugMod.TeleportToSavePosKey.Value} TeleportToSavePos (Shift+{DebugMod.TeleportToSavePosKey.Value}: Save)");
+                    _sb.AppendLine($"{DebugMod.TeleportToSavePosKey.Value} TeleportToSavePos (LCtrl+{DebugMod.TeleportToSavePosKey.Value}: Save)");
                     _sb.AppendLine($"{DebugMod.OHKKey.Value} OHK: {(DebugMod.IsOHKEnabeld.Value ? $"{green}ON{end}" : "OFF")}");
                     _sb.AppendLine($"{DebugMod.ToggleSkipKey.Value} IsSkipCutScene: {(DebugMod.IsSkip.Value ? $"{green}ON{end}" : "OFF")}");
                     _sb.AppendLine($"{DebugMod.SaveStateKey.Value} SaveState");
-                    _sb.AppendLine($"{DebugMod.LoadStateKey.Value} LoadState");
+                    _sb.AppendLine($"{DebugMod.LoadStateKey.Value} LoadState  (LCtrl+{DebugMod.LoadStateKey.Value}) IsResetScene: {(DebugMod.IsLoadStateResetScene.Value ? $"{green}ON{end}" : "OFF")}");
                     _sb.AppendLine($"{DebugMod.FreeCamKey.Value} FreeCam: {(FreeCamController.IsEnabled ? $"{green}ON{end}" : "OFF")}");
-                    _sb.AppendLine($"{DebugMod.ColliderViewKey.Value} ColliderView (Ctrl: Config)");
+                    _sb.AppendLine($"{DebugMod.ColliderViewKey.Value} ColliderView (LCtrl+{DebugMod.ColliderViewKey.Value}: Config)");
                     _sb.AppendLine($"{DebugMod.TelelportToSpawnPointKey.Value} TelelportToSpawnPoint");
 
                     // --- 遊戲速度監控 ---
