@@ -179,6 +179,7 @@ public class DebugMod : BaseUnityPlugin
             data["ManualSavedHP"] = rt.PlayerHp;
             data["ManualSavedStamina"] = rt.Stamina;
             data["PlayerPos"] = gm.playerStateMachine.transform.position;
+            data["faceDirection"] = gm.playerStateMachine.GetFaceDirection();
 
             // 批量保存其餘 Persistence 對象
             foreach (var dp in dm.DataPersistences)
@@ -211,17 +212,19 @@ public class DebugMod : BaseUnityPlugin
                 float targetS = 90f;
                 int targetH = 3;
                 Vector3 savedPos = Vector3.zero;
+                float faceDirection = 1f;
 
                 if (loadedData.TryGetValue("ManualSavedStamina", out var s)) targetS = System.Convert.ToSingle(s);
                 if (loadedData.TryGetValue("ManualSavedHP", out var h)) targetH = System.Convert.ToInt32(h);
                 if (loadedData.TryGetValue("PlayerPos", out object p) && p is Vector3 v) savedPos = v;
+                if (loadedData.TryGetValue("faceDirection", out var f)) faceDirection = System.Convert.ToSingle(f); ;
 
                 // 獲取當前場景
                 SceneRoot targetScene = gm.CurrentGameSequenceManager.CurrentSceneRoot;
 
                 // 安全啟動：先停止所有相關協程防止衝突
                 StopAllCoroutines();
-                StartCoroutine(LoadAndRestoreRoutine(targetScene, savedPos, targetH, targetS));
+                StartCoroutine(LoadAndRestoreRoutine(targetScene, savedPos, targetH, targetS, faceDirection));
             }
         }
 
@@ -235,7 +238,7 @@ public class DebugMod : BaseUnityPlugin
         return Path.Combine(folder, "testSave");
     }
 
-    private IEnumerator LoadAndRestoreRoutine(SceneRoot scene, Vector3 pos, int hp, float stamina)
+    private IEnumerator LoadAndRestoreRoutine(SceneRoot scene, Vector3 pos, int hp, float stamina, float faceDirection)
     {
         var gm = Singleton<GameManager>.Instance;
         var stm = gm.SceneTranslationManager;
@@ -275,22 +278,24 @@ public class DebugMod : BaseUnityPlugin
 
         // --- 第三階段：數值守護鎖 (Duration: 1.0s) ---
         // 這部分取代了 ExecuteAfterReload，確保數值不會被載入後的 Start() 覆蓋
-        yield return StartCoroutine(ValueLockRoutine(hp, stamina, 1.0f));
+        yield return StartCoroutine(ValueLockRoutine(hp, stamina, faceDirection, 1.0f));
     }
 
-    private IEnumerator ValueLockRoutine(int targetHp, float targetStam, float duration)
+    private IEnumerator ValueLockRoutine(int targetHp, float targetStam, float faceDirection, float duration)
     {
         float timer = 0;
         var gm = Singleton<GameManager>.Instance;
 
-        Logger.LogInfo($"[ValueLock] Locking stats for {duration}s");
+        //Logger.LogInfo($"[ValueLock] Locking stats for {duration}s");
+
+        gm.playerStateMachine.Flip(faceDirection); // 放哪裡
 
         while (timer < duration)
         {
             if (gm.PlayerStateMachine?.PlayerRunTimeData != null)
             {
                 var rt = gm.PlayerStateMachine.PlayerRunTimeData;
-
+                
                 // 檢查是否需要同步 (增加微小容差防止過度運算)
                 if (rt.PlayerHp != targetHp || Mathf.Abs(rt.Stamina - targetStam) > 0.05f)
                 {
